@@ -1,38 +1,39 @@
 {
-    "name": "georgringer/news-tagsuggest",
-    "type": "typo3-cms-extension",
-    "description": "Let editors create tags quickly while editing a news record",
-    "keywords": [
-        "TYPO3",
-        "extension",
-        "article",
-        "news"
-    ],
-    "homepage": "https://github.com/georgringer/news_tagsuggest",
-    "support": {
-        "source": "https://github.com/georgringer/news_tagsuggest",
-        "issues": "https://github.com/georgringer/news_tagsuggest/issues"
-    },
-    "authors": [
-        {
-            "name": "Georg Ringer",
-            "role": "Developer"
-        }
-    ],
-    "license": [
-        "GPL-2.0-or-later"
-    ],
-    "require": {
-        "typo3/cms-core": "^10.4 || ^11"
-    },
-    "autoload": {
-        "psr-4": {
-            "GeorgRinger\\NewsTagsuggest\\": "Classes"
-        }
-    },
-    "extra": {
-        "typo3/cms": {
-            "extension-key": "news_tagsuggest"
-        }
-    }
+	"name": "georgringer/news-tagsuggest",
+	"type": "typo3-cms-extension",
+	"description": "Let editors create tags quickly while editing a news record",
+	"keywords": [
+		"TYPO3",
+		"extension",
+		"article",
+		"news"
+	],
+	"homepage": "https://github.com/georgringer/news_tagsuggest",
+	"support": {
+		"source": "https://github.com/georgringer/news_tagsuggest",
+		"issues": "https://github.com/georgringer/news_tagsuggest/issues"
+	},
+	"authors": [
+		{
+			"name": "Georg Ringer",
+			"role": "Developer"
+		}
+	],
+	"license": [
+		"GPL-2.0-or-later"
+	],
+	"require": {
+		"typo3/cms-core": "^10.4 || ^11",
+		"georgringer/news": "^9 || ^10"
+	},
+	"autoload": {
+		"psr-4": {
+			"GeorgRinger\\NewsTagsuggest\\": "Classes"
+		}
+	},
+	"extra": {
+		"typo3/cms": {
+			"extension-key": "news_tagsuggest"
+		}
+	}
 }
