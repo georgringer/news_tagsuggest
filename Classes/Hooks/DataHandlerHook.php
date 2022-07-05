@@ -85,7 +85,7 @@ class DataHandlerHook
         }
 
         $pagesTsConfig = BackendUtilityCore::getPagesTSconfig($targetPage);
-        return (int)($pagesTsConfig['tx_news.']['tagPid'] ?? $targetPage);
+        return (int)($pagesTsConfig['tx_news']['tagPid'] ?? $targetPage);
     }
 
     protected function getLocalDataHandlerInstance(DataHandler $parentDataHandler): DataHandler
