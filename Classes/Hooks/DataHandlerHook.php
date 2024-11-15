@@ -11,11 +11,13 @@ namespace GeorgRinger\NewsTagsuggest\Hooks;
  * LICENSE.txt file that was distributed with this source code.
  */
 
-use GeorgRinger\NewsTagsuggest\Backend\Wizard\SuggestWizardReceiver;
+use GeorgRinger\NewsTagsuggest\Repository\SuggestRegistryRepository;
 use TYPO3\CMS\Backend\Utility\BackendUtility as BackendUtilityCore;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\StringUtility;
+use TYPO3\CMS\Extbase\Utility\DebuggerUtility;
 
 class DataHandlerHook
 {
@@ -27,7 +29,7 @@ class DataHandlerHook
         if ($table !== 'tx_news_domain_model_news') {
             return;
         }
-        if (!str_contains($fieldArray['tags'] ?? '', 'tx_news_domain_model_tag_NEW')) {
+        if (!str_contains($fieldArray['tags'] ?? '', 'tx_news_domain_model_tag_' . SuggestRegistryRepository::ID_PREFIX)) {
             return;
         }
         $this->localDataHandler = $this->getLocalDataHandlerInstance($parentObject);
@@ -37,36 +39,39 @@ class DataHandlerHook
 
     protected function createTags(string $tagList, int $targetPage): string
     {
+        $finalList = [];
         $list = explode(',', $tagList);
-        $creationList = [];
-
         foreach ($list as $newTag) {
-            if (str_contains($newTag, SuggestWizardReceiver::DELIMITER)) {
-                $split = explode(SuggestWizardReceiver::DELIMITER, $newTag, 2);
-                $creationList[StringUtility::getUniqueId('NEW')] = [
-                    'identifier' => $newTag,
-                    'value' => $split[1]
-                ];
-            }
-        }
+            $potentialNewId = str_replace('tx_news_domain_model_tag_', '', $newTag);
 
-        $commandArray = [];
-        foreach ($creationList as $key => $item) {
-            $commandArray['tx_news_domain_model_tag'][$key] = [
+            if (!str_starts_with($potentialNewId, SuggestRegistryRepository::ID_PREFIX)) {
+                $finalList[] = $newTag;
+                continue;
+            }
+
+            $registryId = str_replace(SuggestRegistryRepository::ID_PREFIX, '', $potentialNewId);
+
+            $tagTitle = $this->getSuggestRepository()->get((int)$registryId);
+
+            $identifier = StringUtility::getUniqueId('NEW');
+            $commandArray = [];
+            $commandArray['tx_news_domain_model_tag'][$identifier] = [
                 'pid' => $targetPage,
-                'title' => $item['value'],
+                'title' => $tagTitle
             ];
-        }
+            $this->localDataHandler->start($commandArray, []);
+            $this->localDataHandler->process_datamap();
 
-        $this->localDataHandler->start($commandArray, []);
-        $this->localDataHandler->process_datamap();
-
-        foreach ($creationList as $key => $item) {
-            if (isset($this->localDataHandler->substNEWwithIDs[$key])) {
-                $tagList = str_replace($item['identifier'], 'tx_news_domain_model_tag_' . $this->localDataHandler->substNEWwithIDs[$key], $tagList);
+            if (isset($this->localDataHandler->substNEWwithIDs[$identifier])) {
+                $finalList[] = 'tx_news_domain_model_tag_' . $this->localDataHandler->substNEWwithIDs[$identifier];
+            } else {
+                // todo logging error log from localDataHandler
             }
         }
-        return $tagList;
+
+        $this->getSuggestRepository()->cleanup();
+
+        return implode(',', $finalList);
     }
 
     /**
@@ -88,7 +93,7 @@ class DataHandlerHook
         return (int)($pagesTsConfig['tx_news.']['tagPid'] ?? $targetPage);
     }
 
-    protected function getLocalDataHandlerInstance(DataHandler $parentDataHandler): DataHandler
+    private function getLocalDataHandlerInstance(DataHandler $parentDataHandler): DataHandler
     {
         $localDataHandler = GeneralUtility::makeInstance(DataHandler::class);
         $localDataHandler->copyTree = $parentDataHandler->copyTree;
@@ -102,4 +107,15 @@ class DataHandlerHook
         $localDataHandler->bypassWorkspaceRestrictions = $parentDataHandler->bypassWorkspaceRestrictions;
         return $localDataHandler;
     }
+
+    private function getSuggestRepository(): SuggestRegistryRepository
+    {
+        return GeneralUtility::makeInstance(SuggestRegistryRepository::class);
+    }
+
+    private function getBackendUser(): BackendUserAuthentication
+    {
+        return $GLOBALS['BE_USER'];
+    }
+
 }

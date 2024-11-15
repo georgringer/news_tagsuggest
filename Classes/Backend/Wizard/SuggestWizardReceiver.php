@@ -11,14 +11,12 @@ namespace GeorgRinger\NewsTagsuggest\Backend\Wizard;
  * LICENSE.txt file that was distributed with this source code.
  */
 
+use GeorgRinger\NewsTagsuggest\Repository\SuggestRegistryRepository;
 use TYPO3\CMS\Backend\Form\Wizard\SuggestWizardDefaultReceiver;
-use TYPO3\CMS\Core\Imaging\Icon;
-use TYPO3\CMS\Core\Utility\StringUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-class SuggestWizardReceiver extends SuggestWizardDefaultReceiver
+class  SuggestWizardReceiver extends SuggestWizardDefaultReceiver
 {
-
-    public const DELIMITER = '__--__';
 
     public function queryTable(&$params, $recursionCounter = 0)
     {
@@ -30,19 +28,28 @@ class SuggestWizardReceiver extends SuggestWizardDefaultReceiver
         });
 
         if (empty($matchRow)) {
-            $newUid = StringUtility::getUniqueId('NEW');
+            $registry = $this->getSuggestRepository();
+
+            $newUid = SuggestRegistryRepository::ID_PREFIX . $registry->set($params['value']);
+
             $rows[$this->table . '_' . $newUid] = [
-                'class' => '',
-                'label' => $params['value'],
+                'label' => strip_tags(sprintf($this->getLanguageService()->sL('LLL:EXT:news/Resources/Private/Language/locallang_be.xlf:tag_suggest'), $params['value'])),
+                'title' =>  strip_tags(sprintf($this->getLanguageService()->sL('LLL:EXT:news/Resources/Private/Language/locallang_be.xlf:tag_suggest'), $params['value'])),
                 'path' => '',
-                'sprite' => $this->iconFactory->getIconForRecord($this->table, [], Icon::SIZE_SMALL)->render(),
-                'style' => '',
+                'icon' => [
+                    'identifier' => 'ext-news-tag',
+                    'overlay' => null,
+                ],
                 'table' => $this->table,
-                'text' => sprintf($this->getLanguageService()->sL('LLL:EXT:news/Resources/Private/Language/locallang_be.xlf:tag_suggest'), $params['value']),
-                'uid' => $newUid . self::DELIMITER . $params['value'],
+                'uid' => $newUid ,
             ];
         }
 
         return $rows;
+    }
+
+    private function getSuggestRepository(): SuggestRegistryRepository
+    {
+        return GeneralUtility::makeInstance(SuggestRegistryRepository::class);
     }
 }
